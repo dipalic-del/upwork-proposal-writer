@@ -90,24 +90,24 @@ export default function MatcherPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-12">
+    <div className="max-w-4xl mx-auto space-y-6 pb-12">
       {/* Title */}
       <div className="space-y-1">
-        <h1 className="page-title">Find the Best Freelancer for this Job</h1>
-        <p className="page-subtitle">
-          Paste the Upwork job details below. We'll compare it against your team's skills and show you who fits best.
+        <h1 className="page-title text-xl sm:text-2xl">Find the Best Freelancer for this Job</h1>
+        <p className="page-subtitle text-xs sm:text-sm">
+          Paste the Upwork job details below, or click a sample to see who fits best.
         </p>
       </div>
 
       {/* Quick Samples */}
       <div className="flex items-center gap-2 flex-wrap text-xs">
-        <span className="text-slate-400 font-medium">Quick sample:</span>
+        <span className="text-slate-400 font-medium">Try a sample:</span>
         {QUICK_SAMPLES.map((sample, i) => (
           <button
             key={i}
             type="button"
             onClick={() => handleApplySample(sample)}
-            className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-orange-400 hover:text-orange-600 font-medium transition-all shadow-xs"
+            className="px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-orange-400 hover:text-orange-600 font-medium transition-all shadow-xs"
           >
             {sample.tag}
           </button>
@@ -115,7 +115,7 @@ export default function MatcherPage() {
       </div>
 
       {/* Main Job Input Card */}
-      <form onSubmit={handleSearch} className="card space-y-5">
+      <form onSubmit={handleSearch} className="card space-y-4">
         <div>
           <label className="label">Job Title *</label>
           <input

@@ -117,7 +117,7 @@ export default function App() {
         </header>
 
         {/* Content Area */}
-        <main className="flex-1 overflow-y-auto p-8">
+        <main className="flex-1 overflow-y-auto px-6 py-6 lg:px-10">
           <Routes>
             <Route path="/"         element={<MatcherPage />} />
             <Route path="/proposal" element={<ProposalPage />} />
