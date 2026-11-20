@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+
+# Environment & Secrets (NEVER commit to git)
+.env
+backend/.env
+backend/.env.local
+frontend/.env
+*.env
+*.env.*
+
+# Local cache & logs
+backend/local_profiles_cache.json
+*.log
+.system_generated/
+
+# Build artifacts
+frontend/dist/
+dist/
+build/
+.vite/
+
