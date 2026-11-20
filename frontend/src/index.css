@@ -26,10 +26,10 @@
 
   /* Cards */
   .card {
-    @apply bg-white border border-slate-100 rounded-2xl p-6 shadow-card;
+    @apply bg-white border border-slate-100 rounded-2xl p-6 shadow-sm;
   }
   .card-hover {
-    @apply bg-white border border-slate-100 rounded-2xl p-6 shadow-card hover:shadow-hover transition-all duration-200;
+    @apply bg-white border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200;
   }
 
   /* Form Elements */
