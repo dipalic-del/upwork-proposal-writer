@@ -1,409 +1,291 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
-  Zap, Loader2, Sparkles, SlidersHorizontal, Star, MapPin, Clock,
-  Award, ChevronDown, ChevronUp, CheckCircle, FileText, Check, ArrowRight
+  Search, Sparkles, Star, MapPin, Clock, ArrowRight,
+  Loader2, CheckCircle2, UserCheck, Briefcase
 } from 'lucide-react'
-import { matchProfiles, generateProposal, getProfiles, seedProfiles } from '../services/api'
-import ProposalEditor from '../components/ProposalEditor'
+import { matchProfiles } from '../services/api'
 import toast from 'react-hot-toast'
 
-const DEMO_JOBS = [
+const QUICK_SAMPLES = [
   {
-    label: '⚡ n8n & AI Automation Specialist',
-    title: 'AI Automation Engineer needed for n8n & Make workflows',
-    description: 'Looking for an experienced automation engineer to build business process automations using n8n and Make.com. You will integrate LLM agents, connect CRM APIs (HighLevel, HubSpot), and automate lead qualification and reporting pipelines. Fast turnaround and clean API integrations required.',
-    skills: 'n8n, Make.com, Python, FastAPI, API Integrations, LLM Prompt Engineering',
-    budget: '$30 - $60 / hr',
-    questions: '1. Describe a complex n8n or Make.com automation workflow you have built.\n2. What is your experience with OpenAI/LLM API integrations?'
+    tag: 'AI & Automation Specialist',
+    title: 'Looking for n8n and Make.com automation specialist',
+    description: 'We need an experienced developer to automate our client onboarding and lead generation pipelines. You will build workflows in n8n and Make.com, integrate AI models for data parsing, and connect our CRM APIs.',
+    skills: 'n8n, Make.com, Python, API Integrations',
+    budget: '$30 - $50 / hr'
   },
   {
-    label: '🐍 Full-Stack Python & FastAPI Dev',
-    title: 'Full-Stack Python Engineer (FastAPI, React, Supabase)',
-    description: 'We need a senior full-stack developer to build an internal knowledge retrieval dashboard. Backend is FastAPI with Supabase pgvector for semantic search. Frontend is React + Tailwind CSS. Must write clean modular code and implement fast vector embeddings.',
-    skills: 'Python, FastAPI, Supabase, pgvector, React, Tailwind CSS',
-    budget: '$50 - $80 / hr',
-    questions: '1. Have you implemented pgvector or semantic search before in Supabase or PostgreSQL?\n2. Can you share links to your GitHub or past production React dashboards?'
-  },
-  {
-    label: '⚛️ React & Next.js Frontend Architect',
-    title: 'Senior Frontend Architect for Modern SaaS Dashboard',
-    description: 'Seeking a senior React / Next.js developer to redesign our client analytics dashboard with modern Tailwind styling, dark/light theme, interactive data visualizations, and ultra-crisp responsive components.',
-    skills: 'React, Next.js, Tailwind CSS, TypeScript, UI/UX Design',
-    budget: '$3,000 fixed price',
-    questions: '1. What is your favorite component library or styling system and why?\n2. Are you available for 25+ hours per week?'
+    tag: 'Python & FastAPI Developer',
+    title: 'Senior Python Developer for AI & Vector Search App',
+    description: 'Looking for a senior Python engineer to build backend APIs with FastAPI and Supabase pgvector. Experience with embeddings, LLMs, and PostgreSQL database design is required.',
+    skills: 'Python, FastAPI, Supabase, PostgreSQL',
+    budget: '$50 - $80 / hr'
   }
 ]
 
 export default function MatcherPage() {
-  const [form, setForm] = useState({
-    job_title: '',
-    job_description: '',
-    required_skills: '',
-    budget_or_rate: '',
-    screening_questions: '',
-    match_count: 5,
-  })
+  const navigate = useNavigate()
 
-  const [matching, setMatching] = useState(false)
-  const [matches, setMatches] = useState([])
-  const [selectedProfile, setSelectedProfile] = useState(null)
+  const [jobTitle, setJobTitle] = useState('')
+  const [jobDescription, setJobDescription] = useState('')
+  const [requiredSkills, setRequiredSkills] = useState('')
+  const [budget, setBudget] = useState('')
 
-  const [generating, setGenerating] = useState(false)
-  const [proposalData, setProposalData] = useState(null)
-  const [expandedCard, setExpandedCard] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [results, setResults] = useState(null)
 
-  // Seed sample profiles if none exist on initial load
-  useEffect(() => {
-    getProfiles().then(({ data }) => {
-      if (!data || data.length === 0) {
-        seedProfiles().catch(() => {})
-      }
-    }).catch(() => {})
-  }, [])
-
-  const handleLoadDemo = (demo) => {
-    setForm({
-      job_title: demo.title,
-      job_description: demo.description,
-      required_skills: demo.skills,
-      budget_or_rate: demo.budget,
-      screening_questions: demo.questions,
-      match_count: 5,
-    })
-    toast.success(`Loaded sample: "${demo.label}"`)
+  const handleApplySample = (sample) => {
+    setJobTitle(sample.title)
+    setJobDescription(sample.description)
+    setRequiredSkills(sample.skills)
+    setBudget(sample.budget)
+    toast.success(`Loaded "${sample.tag}"`)
   }
 
-  const handleMatch = async (e) => {
-    if (e) e.preventDefault()
-    if (!form.job_title.trim() || !form.job_description.trim()) {
-      toast.error('Job title and description are required')
+  const handleSearch = async (e) => {
+    e.preventDefault()
+    if (!jobTitle.trim() || !jobDescription.trim()) {
+      toast.error('Please enter the job title and description')
       return
     }
 
-    setMatching(true)
-    setMatches([])
-    setSelectedProfile(null)
-    setProposalData(null)
+    setLoading(true)
+    setResults(null)
 
     try {
-      const payload = {
-        job_title: form.job_title,
-        job_description: form.job_description,
-        required_skills: form.required_skills
-          ? form.required_skills.split(',').map((s) => s.trim()).filter(Boolean)
-          : [],
-        budget_or_rate: form.budget_or_rate || null,
-        match_count: Number(form.match_count),
-      }
-
-      const { data } = await matchProfiles(payload)
-      const foundMatches = data.matches || []
-      setMatches(foundMatches)
-
-      if (foundMatches.length > 0) {
-        const topMatch = foundMatches[0].profile
-        setSelectedProfile(topMatch)
-        toast.success(`Matched ${foundMatches.length} candidate(s)! Generating tailored proposal...`)
-
-        // Auto-generate proposal for #1 ranked match
-        await triggerGenerate(topMatch.id, 'confident')
-      } else {
-        toast('No matching profiles found in database. Try seeding sample profiles in the Profiles tab.')
-      }
-    } catch (err) {
-      toast.error(err?.response?.data?.detail || 'Vector matching failed. Check backend connection.')
-    } finally {
-      setMatching(false)
-    }
-  }
-
-  const triggerGenerate = async (profileId, tone = 'confident') => {
-    const targetId = profileId || selectedProfile?.id
-    if (!targetId) {
-      toast.error('Please select a candidate first')
-      return
-    }
-
-    setGenerating(true)
-    try {
-      const questionsList = form.screening_questions
-        ? form.screening_questions
-            .split('\n')
-            .map((q) => q.replace(/^\d+[\.\)]\s*/, '').trim())
-            .filter(Boolean)
+      const skillsArray = requiredSkills
+        ? requiredSkills.split(',').map((s) => s.trim()).filter(Boolean)
         : []
 
-      const payload = {
-        profile_id: targetId,
-        job_title: form.job_title,
-        job_description: form.job_description,
-        screening_questions: questionsList,
-        tone: tone,
-      }
+      const { data } = await matchProfiles({
+        job_title: jobTitle,
+        job_description: jobDescription,
+        required_skills: skillsArray,
+        budget_or_rate: budget || null,
+        match_count: 5,
+      })
 
-      const { data } = await generateProposal(payload)
-      setProposalData(data)
-      toast.success('Generated interview-winning proposal!')
+      setResults(data.matches || [])
+      toast.success(`Found ${data.matches?.length || 0} matching freelancer(s)!`)
     } catch (err) {
-      toast.error(err?.response?.data?.detail || 'Proposal generation failed')
+      toast.error('Could not match profiles. Make sure backend is running.')
     } finally {
-      setGenerating(false)
+      setLoading(false)
     }
   }
 
-  const handleSelectCandidate = (candidateProfile) => {
-    setSelectedProfile(candidateProfile)
-    triggerGenerate(candidateProfile.id, 'confident')
+  const handleProceedToProposal = (profile) => {
+    navigate('/proposal', {
+      state: {
+        selectedProfile: profile,
+        job: {
+          title: jobTitle,
+          description: jobDescription,
+          skills: requiredSkills,
+          budget: budget,
+        }
+      }
+    })
   }
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="page-header">Upwork AI Matcher & Proposal Studio</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Vectorize job descriptions with Hugging Face, match profiles in Supabase pgvector, and generate winning proposals.
-          </p>
-        </div>
-
-        {/* Demo Quick-Loads */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-xs font-semibold text-gray-400 mr-1">Quick Test:</span>
-          {DEMO_JOBS.map((d, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => handleLoadDemo(d)}
-              className="text-xs font-semibold bg-white border border-slate-200 hover:border-orange-400 hover:text-orange-600 text-gray-700 px-2.5 py-1 rounded-full shadow-xs transition-colors"
-            >
-              {d.label}
-            </button>
-          ))}
-        </div>
+    <div className="max-w-4xl mx-auto space-y-8 pb-12">
+      {/* Title */}
+      <div className="space-y-1">
+        <h1 className="page-title">Find the Best Freelancer for this Job</h1>
+        <p className="page-subtitle">
+          Paste the Upwork job details below. We'll compare it against your team's skills and show you who fits best.
+        </p>
       </div>
 
-      {/* Unified 2-Column Split Workspace */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      {/* Quick Samples */}
+      <div className="flex items-center gap-2 flex-wrap text-xs">
+        <span className="text-slate-400 font-medium">Quick sample:</span>
+        {QUICK_SAMPLES.map((sample, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => handleApplySample(sample)}
+            className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-orange-400 hover:text-orange-600 font-medium transition-all shadow-xs"
+          >
+            {sample.tag}
+          </button>
+        ))}
+      </div>
 
-        {/* ── LEFT PANEL: Upwork Job Input (5 cols) ── */}
-        <div className="lg:col-span-5 space-y-4">
-          <div className="card space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <SlidersHorizontal className="w-4 h-4 text-orange-500" />
-                <h2 className="text-sm font-bold text-gray-900">1. Upwork Job Requirements</h2>
-              </div>
-              <span className="text-[10px] font-semibold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">
-                Step 1
-              </span>
-            </div>
+      {/* Main Job Input Card */}
+      <form onSubmit={handleSearch} className="card space-y-5">
+        <div>
+          <label className="label">Job Title *</label>
+          <input
+            className="input"
+            placeholder="e.g. AI Automation Specialist needed for n8n & Make"
+            value={jobTitle}
+            onChange={(e) => setJobTitle(e.target.value)}
+          />
+        </div>
 
-            <div>
-              <label className="label">Job Title *</label>
-              <input
-                className="input"
-                placeholder="e.g. AI Automation Specialist (n8n / Make)"
-                value={form.job_title}
-                onChange={(e) => setForm({ ...form, job_title: e.target.value })}
-              />
-            </div>
+        <div>
+          <label className="label">Job Description *</label>
+          <textarea
+            className="textarea"
+            rows={6}
+            placeholder="Paste the full job posting from Upwork here..."
+            value={jobDescription}
+            onChange={(e) => setJobDescription(e.target.value)}
+          />
+        </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="label">Stated Budget / Rate</label>
-                <input
-                  className="input"
-                  placeholder="e.g. $40 - $70 / hr"
-                  value={form.budget_or_rate}
-                  onChange={(e) => setForm({ ...form, budget_or_rate: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="label">Max Candidate Matches</label>
-                <select
-                  className="input"
-                  value={form.match_count}
-                  onChange={(e) => setForm({ ...form, match_count: e.target.value })}
-                >
-                  <option value={3}>Top 3</option>
-                  <option value={5}>Top 5</option>
-                  <option value={10}>Top 10</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="label">Full Job Description *</label>
-              <textarea
-                className="textarea"
-                rows={7}
-                placeholder="Paste the complete job description from the client on Upwork..."
-                value={form.job_description}
-                onChange={(e) => setForm({ ...form, job_description: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <label className="label">Required Skills (Comma separated)</label>
-              <input
-                className="input"
-                placeholder="n8n, Make.com, Python, FastAPI"
-                value={form.required_skills}
-                onChange={(e) => setForm({ ...form, required_skills: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <label className="label">Client Screening Questions (Optional)</label>
-              <textarea
-                className="textarea"
-                rows={3}
-                placeholder={"1. Have you built n8n or Make workflows?\n2. What is your turnaround time?"}
-                value={form.screening_questions}
-                onChange={(e) => setForm({ ...form, screening_questions: e.target.value })}
-              />
-            </div>
-
-            <button
-              onClick={handleMatch}
-              disabled={matching}
-              className="btn-primary w-full flex items-center justify-center gap-2 text-sm shadow-sm"
-            >
-              {matching ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Vector Searching Supabase...</span>
-                </>
-              ) : (
-                <>
-                  <Zap className="w-4 h-4" />
-                  <span>Match Candidates & Write Proposal</span>
-                </>
-              )}
-            </button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="label">Key Skills (Optional)</label>
+            <input
+              className="input"
+              placeholder="e.g. n8n, Make.com, Python, FastAPI"
+              value={requiredSkills}
+              onChange={(e) => setRequiredSkills(e.target.value)}
+            />
+            <p className="helper-text">Separate skills with commas</p>
+          </div>
+          <div>
+            <label className="label">Client Budget / Rate (Optional)</label>
+            <input
+              className="input"
+              placeholder="e.g. $40/hr or $1,500 fixed"
+              value={budget}
+              onChange={(e) => setBudget(e.target.value)}
+            />
           </div>
         </div>
 
-        {/* ── RIGHT PANEL: Matches & Proposal Studio (7 cols) ── */}
-        <div className="lg:col-span-7 space-y-6">
-
-          {/* 🎯 Step 2: Supabase pgvector Candidate Matches */}
-          <div className="card space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-orange-500" />
-                <h2 className="text-sm font-bold text-gray-900">
-                  2. Supabase pgvector Ranked Matches {matches.length > 0 && `(${matches.length})`}
-                </h2>
-              </div>
-              <span className="text-[10px] font-semibold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">
-                Step 2
-              </span>
-            </div>
-
-            {matching ? (
-              <div className="py-12 flex flex-col items-center justify-center text-center space-y-2">
-                <Loader2 className="w-7 h-7 text-orange-500 animate-spin" />
-                <p className="text-xs font-semibold text-gray-700">Computing 384-dimensional dense vectors...</p>
-                <p className="text-[11px] text-gray-400">Performing cosine similarity query against Supabase profiles</p>
-              </div>
-            ) : matches.length === 0 ? (
-              <div className="py-8 text-center text-gray-400 space-y-1">
-                <p className="text-xs font-semibold text-gray-600">No matches computed yet</p>
-                <p className="text-[11px] text-gray-400">Fill in the job details on the left and click "Match Candidates"</p>
-              </div>
+        <div className="pt-2 flex justify-end">
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-primary w-full sm:w-auto px-8 py-3 text-base"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Finding Best Matches...</span>
+              </>
             ) : (
-              <div className="space-y-2.5">
-                {matches.map((m, idx) => {
-                  const p = m.profile
-                  const pct = Math.round(m.similarity_percentage)
-                  const isSelected = selectedProfile?.id === p.id
+              <>
+                <Search className="w-5 h-5" />
+                <span>Find Matching Freelancers</span>
+              </>
+            )}
+          </button>
+        </div>
+      </form>
 
-                  return (
-                    <div
-                      key={p.id}
-                      onClick={() => handleSelectCandidate(p)}
-                      className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
-                        isSelected
-                          ? 'border-orange-500 bg-orange-50/40 shadow-xs ring-1 ring-orange-400/40'
-                          : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-3">
-                          <input
-                            type="radio"
-                            name="selected_candidate"
-                            checked={isSelected}
-                            onChange={() => handleSelectCandidate(p)}
-                            className="mt-1 text-orange-500 focus:ring-orange-400 h-4 w-4"
-                          />
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-bold text-gray-900">{p.name}</span>
-                              {p.agency && (
-                                <span className="text-[10px] font-semibold text-orange-600 bg-orange-100/70 px-1.5 py-0.5 rounded">
-                                  {p.agency}
-                                </span>
-                              )}
-                              {idx === 0 && (
-                                <span className="text-[10px] font-bold text-green-700 bg-green-100 px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                                  ★ Top Match
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-[11px] text-gray-500 line-clamp-1 mt-0.5">{p.title}</p>
-                            <div className="flex flex-wrap gap-2 text-[11px] text-gray-500 mt-1">
-                              {p.hourly_rate > 0 && <span className="font-semibold text-gray-700">${p.hourly_rate}/hr</span>}
-                              {p.location && <span>• {p.location}</span>}
-                              {p.job_success_score && <span className="text-green-600 font-semibold">• {p.job_success_score}</span>}
-                            </div>
-                          </div>
+      {/* Results Section */}
+      {results && (
+        <div className="space-y-4 pt-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-slate-900">
+              Best Matching Team Members ({results.length})
+            </h2>
+            <span className="text-xs text-slate-500">
+              Ranked by skill and experience fit
+            </span>
+          </div>
+
+          {results.length === 0 ? (
+            <div className="card text-center py-12 text-slate-500">
+              <p className="font-semibold text-slate-700">No matching profiles found</p>
+              <p className="text-xs text-slate-400 mt-1">Try adding more freelancer profiles in the "Freelancers" tab.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {results.map((match, idx) => {
+                const p = match.profile
+                const score = Math.round(match.similarity_percentage)
+
+                return (
+                  <div key={p.id} className="card-hover flex flex-col md:flex-row md:items-center justify-between gap-5 p-6">
+                    <div className="space-y-2 flex-1">
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-full bg-orange-100 text-orange-600 font-bold flex items-center justify-center text-sm">
+                          {p.name.charAt(0)}
                         </div>
-
-                        {/* Similarity Score Pill */}
-                        <div className="text-right shrink-0">
-                          <div className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold ${
-                            pct >= 75 ? 'bg-green-100 text-green-800' :
-                            pct >= 50 ? 'bg-orange-100 text-orange-800' :
-                            'bg-slate-100 text-gray-700'
-                          }`}>
-                            {pct}% Match
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-bold text-slate-900 text-base">{p.name}</h3>
+                            {idx === 0 && (
+                              <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-green-100 text-green-800">
+                                Best Match
+                              </span>
+                            )}
+                            {p.agency && (
+                              <span className="text-xs font-semibold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md">
+                                {p.agency}
+                              </span>
+                            )}
                           </div>
+                          <p className="text-xs text-slate-500 mt-0.5 font-medium">{p.title}</p>
                         </div>
                       </div>
 
-                      {/* Skills badge preview */}
-                      {m.matched_skills && m.matched_skills.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2.5 pl-7">
-                          {m.matched_skills.map((s) => (
-                            <span key={s} className="badge bg-blue-50 text-blue-700 border border-blue-200 text-[10px]">
-                              ✓ {s}
+                      {/* Details row */}
+                      <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 pt-1">
+                        {p.hourly_rate > 0 && (
+                          <span className="font-semibold text-slate-800">
+                            ${p.hourly_rate}/hr
+                          </span>
+                        )}
+                        {p.location && (
+                          <span className="flex items-center gap-1">
+                            <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                            {p.location}
+                          </span>
+                        )}
+                        {p.job_success_score && (
+                          <span className="text-green-600 font-semibold">
+                            {p.job_success_score}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Matching Skills */}
+                      {match.matched_skills && match.matched_skills.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          {match.matched_skills.map((skill) => (
+                            <span key={skill} className="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                              ✓ {skill}
                             </span>
                           ))}
                         </div>
                       )}
                     </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
 
-          {/* 📝 Step 3: Upwork Proposal Editor */}
-          <ProposalEditor
-            selectedProfile={selectedProfile}
-            jobTitle={form.job_title}
-            jobDescription={form.job_description}
-            screeningQuestions={form.screening_questions}
-            proposalData={proposalData}
-            onGenerate={(tone) => triggerGenerate(selectedProfile?.id, tone)}
-            generating={generating}
-          />
+                    {/* Right action block */}
+                    <div className="flex items-center md:flex-col md:items-end justify-between md:justify-center gap-3 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100 shrink-0">
+                      <div className="text-left md:text-right">
+                        <div className="text-2xl font-extrabold text-orange-600">
+                          {score}%
+                        </div>
+                        <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                          Match Score
+                        </div>
+                      </div>
 
+                      <button
+                        onClick={() => handleProceedToProposal(p)}
+                        className="btn-primary py-2 px-4 text-xs font-bold"
+                      >
+                        <span>Write Proposal</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
-      </div>
+      )}
     </div>
   )
 }

@@ -11,24 +11,23 @@ export default {
           300: '#fdba74',
           400: '#fb923c',
           500: '#f97316',
-          600: '#ea6c0a',
-          700: '#c2560a',
+          600: '#ea580c',
+          700: '#c2410c',
         },
-        brand: {
-          orange: '#f97316',
-          light:  '#fff7ed',
-        }
       },
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'monospace'],
       },
       boxShadow: {
-        card: '0 1px 3px 0 rgba(0,0,0,0.06), 0 1px 2px -1px rgba(0,0,0,0.04)',
-        'card-hover': '0 4px 12px 0 rgba(0,0,0,0.08)',
+        xs: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+        sm: '0 1px 2px 0 rgba(0, 0, 0, 0.04)',
+        card: '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05)',
+        hover: '0 4px 16px -2px rgba(0, 0, 0, 0.08), 0 2px 6px -2px rgba(0, 0, 0, 0.05)',
       },
       borderRadius: {
-        xl: '12px',
-        '2xl': '16px',
+        xl: '14px',
+        '2xl': '18px',
       }
     },
   },
