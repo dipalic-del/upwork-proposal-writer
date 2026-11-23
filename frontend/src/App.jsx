@@ -78,10 +78,13 @@ export default function App() {
               {healthStatus?.supabase_connected ? (
                 <span className="text-green-600 flex items-center gap-1 text-[11px] font-bold">
                   <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                  Ready
+                  Supabase Live
                 </span>
               ) : (
-                <span className="text-slate-400 text-[11px]">Checking...</span>
+                <span className="text-orange-600 flex items-center gap-1 text-[11px] font-bold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+                  Local Cache Active
+                </span>
               )}
             </div>
             <p className="text-[11px] text-slate-400">

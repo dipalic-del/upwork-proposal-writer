@@ -76,8 +76,8 @@ app.include_router(proposal.router)
 )
 def health_check() -> SystemHealthResponse:
     """Returns runtime connectivity status for Supabase and Hugging Face."""
-    supabase_ok = is_supabase_configured() and (get_supabase() is not None)
     profile_count = len(supabase_service.list_profiles())
+    supabase_ok = supabase_service.is_supabase_live()
     return SystemHealthResponse(
         status="healthy",
         supabase_connected=supabase_ok,

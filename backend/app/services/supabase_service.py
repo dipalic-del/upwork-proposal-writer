@@ -24,6 +24,12 @@ _CACHE_FILE = os.path.join(os.path.dirname(__file__), "..", "..", "local_profile
 _CACHE_FILE = os.path.normpath(_CACHE_FILE)
 
 _local_profiles_cache: Dict[str, Dict[str, Any]] = {}
+_supabase_connected: bool = False
+
+
+def is_supabase_live() -> bool:
+    """Returns True if the last Supabase remote call succeeded without auth/connection error."""
+    return _supabase_connected
 
 
 def _load_cache_from_disk() -> None:
@@ -164,11 +170,13 @@ def list_profiles() -> List[ProfileResponse]:
     Returns:
         List[ProfileResponse]: Deduplicated collection of profile objects.
     """
+    global _supabase_connected
     supabase = get_supabase()
     if supabase is not None:
         try:
             res = supabase.table("profiles").select("*").order("created_at", desc=True).execute()
             if res.data is not None:
+                _supabase_connected = True
                 seen_names = set()
                 unique_remote = []
                 for item in res.data:
@@ -178,6 +186,7 @@ def list_profiles() -> List[ProfileResponse]:
                         unique_remote.append(ProfileResponse(**{k: v for k, v in item.items() if k != "embedding"}))
                 return unique_remote
         except Exception as e:
+            _supabase_connected = False
             logger.warning(f"Supabase profile listing failed ({e}). Falling back to local cache.")
 
     # Reload from disk so all worker processes see the latest data

@@ -64,15 +64,20 @@ export default function HealthPage() {
                   <Database className="w-4 h-4 text-orange-500" />
                   <span className="text-sm font-bold text-slate-800">Supabase Database</span>
                 </div>
-                <span className={`inline-flex items-center gap-1 text-xs font-bold ${health.supabase_connected ? 'text-green-600' : 'text-red-500'}`}>
-                  {health.supabase_connected ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
-                  {health.supabase_connected ? 'Connected' : 'Offline'}
+                <span className={`inline-flex items-center gap-1 text-xs font-bold ${health.supabase_connected ? 'text-green-600' : 'text-orange-600'}`}>
+                  {health.supabase_connected ? <CheckCircle2 className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5 text-orange-500" />}
+                  {health.supabase_connected ? 'Supabase Cloud Connected' : 'Local Cache Active'}
                 </span>
               </div>
               <div className="text-xs text-slate-500 flex justify-between">
-                <span>Profiles stored in database:</span>
-                <span className="font-bold text-slate-800">{health.total_profiles_loaded}</span>
+                <span>Profiles available:</span>
+                <span className="font-bold text-slate-800">{health.total_profiles_loaded} profiles</span>
               </div>
+              {!health.supabase_connected && (
+                <div className="text-[11px] bg-orange-50 text-orange-800 p-2 rounded-lg border border-orange-200 mt-2">
+                  Operating on local file cache. To connect to Supabase Cloud, add your project's <code>anon</code> or <code>service_role</code> API key in <code>backend/.env</code>.
+                </div>
+              )}
             </div>
 
             <div className="card space-y-3">
