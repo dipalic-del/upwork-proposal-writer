@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-# upwork-proposal-writer
-=======
 # ⚡ Upwork AI Matcher & Proposal Studio
 
 A production-grade full-stack application built with **React (Vite + Tailwind CSS)**, **Python (FastAPI)**, and **Supabase (PostgreSQL + pgvector)**, powered by **free Hugging Face models**.
